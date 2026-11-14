@@ -157,7 +157,16 @@ Untuk menjaga repositori tetap rapi saat setiap anggota melakukan push pekerjaan
    `git pull origin main`
 2. Setiap kali menyelesaikan aktivitas WBS sesuai bidang tugas, tambahkan perubahan dan lakukan commit:
    `git add .`
-   `git commit -m "feat(bidang): deskripsi aktivitas yang diselesaikan"`
+   `git commit -m ""`
 3. Lakukan push perubahan ke repositori remote kelompok:
    `git push origin <nama_branch>`
 4. File hasil kompilasi (_.exe, _.o, \*.layout) telah diatur pada `.gitignore` sehingga tidak akan mengotori riwayat commit bersama.
+
+## Reminder
+
+Gunakan format berikut setipa ingin push:
+
+- `Update: Pesan` Update untuk nambahin fitur dari yang udah ada.
+- `Create: Pesan` Create kalo belom ada sama sekali fitur atau file tersebut.
+- `Delete: Pesan` Delete kalo mau hapus sesuatu.
+- `Fix: Pesan` Fix kalau udah ada tapi salah.
