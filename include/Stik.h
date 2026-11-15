@@ -1,5 +1,6 @@
 #pragma once
 #include "ObjekGame.h"
+#include "Bola.h"
 #include <SFML/Graphics.hpp>
 
 class Stik : public ObjekGame
@@ -19,6 +20,7 @@ public:
     void bidik(sf::Vector2f arah);
     void aturKekuatan(float k);
     void ikuti(sf::Vector2f posisiBola);
+    void pukul(Bola& bolaPutih);
     float getSudut() const;
     float getKekuatan() const;
     void gambar(sf::RenderWindow& w);

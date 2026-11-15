@@ -9,6 +9,7 @@ const float PANJANG_STIK = 360.0f;   // panjang stik di layar (piksel)
 const float JARAK_MIN = 22.0f;       // jarak ujung stik ke titik pusat bola putih
 const float TARIKAN_MAKS = 35.0f;    // tambahan tarikan saat kekuatan 100
 const float PANJANG_GARIS = 300.0f;  // panjang garis bidik
+const float LAJU_MAKS = 1800.0f;     // laju bola putih saat kekuatan 100 (piksel/detik)
 }
 
 Stik::Stik() : ObjekGame(sf::Vector2f(270.0f, 270.0f))
@@ -23,7 +24,9 @@ Stik::Stik() : ObjekGame(sf::Vector2f(270.0f, 270.0f))
         sprite.setTexture(tekstur);
 
         sf::Vector2u ukuran = tekstur.getSize();
-        sprite.setOrigin(static_cast<float>(ukuran.x), ukuran.y / 2.0f);
+        // Ujung kiri gambar adalah ujung pemukul (berkapur biru), ujung kanan adalah
+        // pegangan. Titik asal di ujung pemukul agar ujung itulah yang menempel ke bola.
+        sprite.setOrigin(0.0f, ukuran.y / 2.0f);
 
         float skala = PANJANG_STIK / static_cast<float>(ukuran.x);
         sprite.setScale(skala, skala);
@@ -51,7 +54,8 @@ Stik::Stik() : ObjekGame(sf::Vector2f(270.0f, 270.0f))
 void Stik::bidik(sf::Vector2f arah)
 {
     sudut = std::atan2(arah.y, arah.x) * 180.0f / PI;
-    sprite.setRotation(sudut);
+    // Badan stik mengarah ke belakang bola, berlawanan dengan arah pukulan.
+    sprite.setRotation(sudut + 180.0f);
     garisBidik.setRotation(sudut);
 }
 
@@ -88,6 +92,14 @@ void Stik::ikuti(sf::Vector2f posisiBola)
     sprite.setPosition(posisi - arah * tarik);
 
     garisBidik.setPosition(posisi);
+}
+
+// Memukul bola putih searah garis bidik. Kekuatan 100 menghasilkan laju terbesar.
+void Stik::pukul(Bola& bolaPutih)
+{
+    float radian = sudut * PI / 180.0f;
+    sf::Vector2f arah(std::cos(radian), std::sin(radian));
+    bolaPutih.beriKecepatan(arah * (LAJU_MAKS * kekuatan / 100.0f));
 }
 
 float Stik::getSudut() const
