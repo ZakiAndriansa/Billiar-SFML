@@ -1,7 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 
-class Objekgame
+class ObjekGame
 {
 protected:
     sf::Vector2f posisi;
@@ -9,5 +9,5 @@ protected:
 public:
     ObjekGame(sf::Vector2f posisiAwal) : posisi(posisiAwal) {}
     virtual ~ObjekGame() {}
-    virtual void gambar(sf::RenderWindows& w) = 0;
+    virtual void gambar(sf::RenderWindow& w) = 0;
 };

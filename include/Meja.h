@@ -8,6 +8,7 @@ private:
 	sf::FloatRect batas;
 	sf::Vector2f lubang[6];
 	sf::Color warna;
+	sf::Texture teksturMeja;
 	sf::Sprite spriteMeja;
 	sf::Texture teksturLubang[6];
 	sf::Sprite spriteLubang[6];
@@ -16,5 +17,5 @@ private:
 
 public:
 	Meja();
-	void gambar(sf::RenderWindows &w);
+	void gambar(sf::RenderWindow& w);
 };
