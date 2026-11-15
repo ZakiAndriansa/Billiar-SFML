@@ -166,7 +166,7 @@ Untuk menjaga repositori tetap rapi saat setiap anggota melakukan push pekerjaan
 
 Gunakan format berikut setipa ingin push:
 
-- `Update: Pesan` Update untuk nambahin fitur dari yang udah ada.
-- `Create: Pesan` Create kalo belom ada sama sekali fitur atau file tersebut.
-- `Delete: Pesan` Delete kalo mau hapus sesuatu.
-- `Fix: Pesan` Fix kalau udah ada tapi salah.
+- `Update: Pesan` - Update untuk nambahin fitur dari yang udah ada.
+- `Create: Pesan` - Create kalo belom ada sama sekali fitur atau file tersebut.
+- `Delete: Pesan` - Delete kalo mau hapus sesuatu.
+- `Fix: Pesan` - Fix kalau udah ada tapi salah.

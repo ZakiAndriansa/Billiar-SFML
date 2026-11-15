@@ -1,92 +1,78 @@
-/**
- * ============================================================================
- * PROYEK DPBO: GAME BILLIARD 2D (C++ & SFML)
- * ============================================================================
- * Tugas Minggu 1 (WBS 1.4): Menyiapkan Repositori dan SFML
- * PIC: User (Grafis dan Antarmuka)
- * Software: Dev-C++ 5.11
- * ============================================================================
- * Deskripsi:
- * Program sederhana ini digunakan untuk memverifikasi bahwa:
- * 1. Pustaka SFML sudah terhubung dengan benar di Dev-C++.
- * 2. Jendela grafis dapat dibuka.
- * 3. Aset gambar yang telah dibuat pada Minggu 2 (Meja, Bola, Stik) dapat dimuat.
- * ============================================================================
- */
+/*------------------------------------------
+PROYEK DPBO: GAME BILLIARD 2D (C++ & SFML)
+--------------------------------------------
+Tugas Minggu 3 (WBS 3.1): Menggambar meja, lubang, dan bola
+Software: Dev-C++ 5.11
+Tgl Pembuatan : 14 November 2026
+Tgl Revisi terakhir: 14 November 2026
+--------------------------------------------
+Deskripsi:
+Menampilkan meja biliar, enam lubang, dan enam belas bola
+sesuai susunan rak 8-ball. Belum ada fisika dan aturan main.
+-------------------------------------------*/
 
 #include <SFML/Graphics.hpp>
-#include <iostream>
+#include "Meja.h"
+#include "Bola.h"
 
-int main() {
-    // 1. Membuat jendela aplikasi SFML (ukuran 1024 x 640 piksel)
-    sf::RenderWindow window(sf::VideoMode(1024, 640), "Proyek Billiard SFML - Tes Repositori & Aset (Minggu 1 & 2)", sf::Style::Close | sf::Style::Titlebar);
+struct DataBola
+{
+    int nomor;
+    float x;
+    float y;
+};
+
+int main()
+{
+    sf::RenderWindow window(
+        sf::VideoMode(1024, 640),
+        "Billiard 8-Ball - WBS 3.1 Menggambar Meja, Lubang, dan Bola",
+        sf::Style::Titlebar | sf::Style::Close
+    );
     window.setFramerateLimit(60);
 
-    // 2. Memuat font untuk menampilkan teks status
-    sf::Font font;
-    if (!font.loadFromFile("assets/fonts/arial.ttf")) {
-        std::cout << "[INFO] Font arial.ttf tidak ditemukan, menggunakan tampilan tanpa teks." << std::endl;
+    const float DIAMETER_BOLA = 32.0f;
+
+    DataBola data[16] = {
+        {  0, 270.0f, 270.0f },                 // bola putih
+        {  1, 690.0f, 270.0f },                 // baris 1
+        {  9, 717.7f, 254.0f }, {  2, 717.7f, 286.0f },             // baris 2
+        { 10, 745.4f, 238.0f }, {  8, 745.4f, 270.0f }, {  3, 745.4f, 302.0f },   // baris 3
+        { 11, 773.1f, 222.0f }, {  7, 773.1f, 254.0f }, { 14, 773.1f, 286.0f }, {  4, 773.1f, 318.0f }, // baris 4
+        {  5, 800.8f, 206.0f }, { 13, 800.8f, 238.0f }, { 15, 800.8f, 270.0f }, {  6, 800.8f, 302.0f }, { 12, 800.8f, 334.0f } // baris 5
+    };
+
+    Bola* bola[16];
+    for (int i = 0; i < 16; i++)
+    {
+        bola[i] = new Bola(data[i].nomor, sf::Vector2f(data[i].x, data[i].y), DIAMETER_BOLA);
     }
 
-    sf::Text statusText;
-    statusText.setFont(font);
-    statusText.setString("Repositori dan SFML Berhasil Dikonfigurasi (Minggu 1 & 2)");
-    statusText.setCharacterSize(20);
-    statusText.setFillColor(sf::Color::White);
-    statusText.setPosition(20.0f, 15.0f);
+    Meja meja;
 
-    // 3. Tes memuat aset grafis hasil pekerjaan Minggu 2 (WBS 2.4)
-    sf::Texture texTable;
-    sf::Sprite spriteTable;
-    if (texTable.loadFromFile("assets/textures/table_green.png")) {
-        texTable.setSmooth(true);
-        spriteTable.setTexture(texTable);
-        spriteTable.setPosition(32.0f, 50.0f);
-    }
-
-    sf::Texture texBall;
-    sf::Sprite spriteBall;
-    if (texBall.loadFromFile("assets/textures/ball_8.png")) {
-        texBall.setSmooth(true);
-        spriteBall.setTexture(texBall);
-        spriteBall.setScale(0.5f, 0.5f);
-        spriteBall.setPosition(500.0f, 310.0f); // Tampilkan bola 8 di tengah meja
-    }
-
-    sf::Texture texCue;
-    sf::Sprite spriteCue;
-    if (texCue.loadFromFile("assets/textures/cue_stick.png")) {
-        texCue.setSmooth(true);
-        spriteCue.setTexture(texCue);
-        spriteCue.setPosition(540.0f, 315.0f); // Tampilkan stik di dekat bola
-    }
-
-    std::cout << "====================================================" << std::endl;
-    std::cout << "Setup SFML dan Repositori Berhasil!" << std::endl;
-    std::cout << "Aset Meja, Bola, dan Stik siap untuk tahap implementasi." << std::endl;
-    std::cout << "====================================================" << std::endl;
-
-    // 4. Game loop sederhana
-    while (window.isOpen()) {
+    while (window.isOpen())
+    {
         sf::Event event;
-        while (window.pollEvent(event)) {
-            // Tutup jendela jika tombol silang (X) diklik
-            if (event.type == sf::Event::Closed) {
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+            {
                 window.close();
             }
         }
 
-        // Membersihkan layar dengan warna latar belakang gelap
-        window.clear(sf::Color(20, 24, 30));
-
-        // Menggambar teks dan aset yang sudah dimuat
-        window.draw(statusText);
-        window.draw(spriteTable);
-        window.draw(spriteBall);
-        window.draw(spriteCue);
-
-        // Menampilkan hasil render ke layar
+        window.clear(sf::Color(20, 20, 20));
+        meja.gambar(window);
+        for (int i = 0; i < 16; i++)
+        {
+            bola[i]->gambar(window);
+        }
         window.display();
+    }
+
+    for (int i = 0; i < 16; i++)
+    {
+        delete bola[i];
     }
 
     return 0;
