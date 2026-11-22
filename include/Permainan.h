@@ -31,11 +31,19 @@ private:
     bool semuaBerhenti() const;
     void selesaiPukulan();
     void kembalikanBolaPutih();
-    void mulaiPertandingan();
 
 public:
     Permainan();
     ~Permainan();
+    void mulaiPertandingan();
+    void aturNamaPemain1(const std::string& nama);
+    void aturWarnaMeja(const std::string& warna);
+    const Pemain& getPemain1() const;
+    const Pemain& getPemain2() const;
+    const Wasit& getWasit() const;
+    const Bola* getBola(int indeks) const;
+    float getKekuatan() const;
+    bool apakahSelesai() const;
     void prosesEvent(const sf::Event& e);
     void update(float dt);
     void gambar(sf::RenderWindow& w);

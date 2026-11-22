@@ -60,7 +60,52 @@ void Permainan::mulaiPertandingan()
     susunBola();
     wasit.mulai();
     selesai = false;
+    bolaBergerak = false;
+    menahan = false;
+    kekuatan = 0.0f;
+    stik.aturKekuatan(0.0f);
     std::cout << std::endl << "Pertandingan baru. Giliran: " << wasit.getGiliran()->getNama() << std::endl;
+}
+
+void Permainan::aturNamaPemain1(const std::string& nama)
+{
+    pemain1.aturNama(nama);
+}
+
+void Permainan::aturWarnaMeja(const std::string& warna)
+{
+    meja.aturWarna(warna);
+}
+
+const Pemain& Permainan::getPemain1() const
+{
+    return pemain1;
+}
+
+const Pemain& Permainan::getPemain2() const
+{
+    return pemain2;
+}
+
+const Wasit& Permainan::getWasit() const
+{
+    return wasit;
+}
+
+const Bola* Permainan::getBola(int indeks) const
+{
+    if (indeks < 0 || indeks >= 16) return 0;
+    return bola[indeks];
+}
+
+float Permainan::getKekuatan() const
+{
+    return kekuatan;
+}
+
+bool Permainan::apakahSelesai() const
+{
+    return selesai;
 }
 
 void Permainan::prosesEvent(const sf::Event& e)
@@ -245,5 +290,4 @@ void Permainan::gambar(sf::RenderWindow& w)
     {
         stik.gambar(w);
     }
-    stik.gambarIndikator(w);
 }
