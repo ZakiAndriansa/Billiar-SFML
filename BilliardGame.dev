@@ -25,7 +25,7 @@ UseCustomMakefile=0
 CustomMakefile=
 CommandLine=
 Folders=include,src
-UnitCount=6
+UnitCount=8
 IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=0
@@ -102,6 +102,26 @@ BuildCmd=
 
 [Unit6]
 FileName=src\Meja.cpp
+CompileCpp=1
+Folder=src
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit7]
+FileName=include\Stik.h
+CompileCpp=1
+Folder=include
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit8]
+FileName=src\Stik.cpp
 CompileCpp=1
 Folder=src
 Compile=1
