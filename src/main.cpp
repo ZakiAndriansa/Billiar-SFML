@@ -105,6 +105,13 @@ int main()
             }
         }
 
+        // Bidikan yang sedang diisi dibatalkan saat layar lain (jeda, pengaturan,
+        // menu) terbuka, supaya pukulan tidak terlepas ketika permainan dilanjutkan.
+        if (menu.getLayar() != LAYAR_BERMAIN)
+        {
+            permainan.batalkanBidikan();
+        }
+
         if (menu.getLayar() == LAYAR_BERMAIN)
         {
             permainan.update(dt);

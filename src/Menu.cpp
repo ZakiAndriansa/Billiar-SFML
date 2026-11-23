@@ -682,7 +682,7 @@ void Menu::gambar(sf::RenderWindow& w) const
                 sf::Text rk;
                 rk.setFont(font);
                 char rbuf[8];
-                std::sprintf(rbuf, "#%d", DATA_CONTOH[r].peringkat);
+                std::sprintf(rbuf, "%d", DATA_CONTOH[r].peringkat);
                 rk.setString(rbuf);
                 rk.setCharacterSize(20);
                 rk.setFillColor(sf::Color(185, 202, 224));

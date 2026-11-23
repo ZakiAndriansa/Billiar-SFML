@@ -67,6 +67,15 @@ void Permainan::mulaiPertandingan()
     std::cout << std::endl << "Pertandingan baru. Giliran: " << wasit.getGiliran()->getNama() << std::endl;
 }
 
+// Membatalkan pengisian kekuatan, misalnya saat permainan dijeda di tengah
+// bidikan, agar klik berikutnya tidak langsung memukul bola putih.
+void Permainan::batalkanBidikan()
+{
+    menahan = false;
+    kekuatan = 0.0f;
+    stik.aturKekuatan(0.0f);
+}
+
 void Permainan::aturNamaPemain1(const std::string& nama)
 {
     pemain1.aturNama(nama);

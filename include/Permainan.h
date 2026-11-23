@@ -36,6 +36,7 @@ public:
     Permainan();
     ~Permainan();
     void mulaiPertandingan();
+    void batalkanBidikan();
     void aturNamaPemain1(const std::string& nama);
     void aturWarnaMeja(const std::string& warna);
     const Pemain& getPemain1() const;
