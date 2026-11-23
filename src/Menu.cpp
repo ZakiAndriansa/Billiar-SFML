@@ -33,7 +33,10 @@ Menu::Menu(Pengaturan* cfg)
       fontSiap(false),
       namaPemain("Pemain 1"),
       tingkatKesulitan(1),
+      lawanKomputer(true),
       inputNamaAktif(true),
+      namaPemain2("Pemain 2"),
+      inputNama2Aktif(false),
       waktuKursor(0.0f),
       pengaturan(cfg),
       draftWarna("hijau"),
@@ -119,6 +122,23 @@ Menu::Menu(Pengaturan* cfg)
     btnKeluar.muat("assets/ui/btn_488x74_dark_normal.png", "assets/ui/btn_488x74_dark_hover.png",
                    font, "KELUAR", 36, sf::Vector2f(264.0f, 510.0f));
 
+    // --- Pilih Mode ---
+    aturTeksJudul(teksJudulMode, "PILIH MODE", 60, sf::Vector2f(512.0f, 72.0f));
+    btnModeManusia.muat("assets/ui/btn_488x74_yellow_normal.png", "assets/ui/btn_488x74_yellow_hover.png",
+                        font, "1 VS 1 MANUSIA", 36, sf::Vector2f(264.0f, 160.0f));
+    aturTeksLabel(teksDescManusia, "Dua pemain bergantian memukul di satu komputer", 20, sf::Vector2f(0.0f, 0.0f));
+    btnModeKomputer.muat("assets/ui/btn_488x74_blue_normal.png", "assets/ui/btn_488x74_blue_hover.png",
+                         font, "LAWAN KOMPUTER", 36, sf::Vector2f(264.0f, 300.0f));
+    aturTeksLabel(teksDescKomputer, "Pilih tingkat Mudah, Sedang, atau Sulit", 20, sf::Vector2f(0.0f, 0.0f));
+    btnModeKembali.muat("assets/ui/btn_488x74_dark_normal.png", "assets/ui/btn_488x74_dark_hover.png",
+                        font, "KEMBALI", 36, sf::Vector2f(264.0f, 480.0f));
+    {
+        sf::FloatRect b = teksDescManusia.getLocalBounds();
+        teksDescManusia.setPosition(512.0f - b.width / 2.0f - b.left, 246.0f);
+        b = teksDescKomputer.getLocalBounds();
+        teksDescKomputer.setPosition(512.0f - b.width / 2.0f - b.left, 386.0f);
+    }
+
     // --- Setup Pemain ---
     aturTeksJudul(teksJudulSetup, "PERSIAPAN PEMAIN", 58, sf::Vector2f(512.0f, 66.0f));
     aturTeksLabel(teksLabelNama, "Nama Pemain:", 24, sf::Vector2f(78.0f, 124.0f));
@@ -134,6 +154,17 @@ Menu::Menu(Pengaturan* cfg)
 
     kursorInput.setSize(sf::Vector2f(3.0f, 30.0f));
     kursorInput.setFillColor(sf::Color(255, 210, 0));
+
+    // Kolom nama kedua untuk mode 1 lawan 1 manusia, menempati tempat pilihan tingkat.
+    aturTeksLabel(teksLabelNama2, "Nama Pemain 2:", 24, sf::Vector2f(78.0f, 240.0f));
+    sprInputBox2 = sprInputBox;
+    sprInputBox2.setPosition(76.0f, 278.0f);
+    sprPensil2 = sprPensil;
+    sprPensil2.setPosition(902.0f, 293.0f);
+    teksInputNama2 = teksInputNama;
+    teksInputNama2.setPosition(100.0f, 292.0f);
+    teksInputNama2.setString(namaPemain2);
+    kursorInput2 = kursorInput;
 
     const char* namaDiff[3] = { "mudah", "sedang", "sulit" };
     const char* labelDiff[3] = { "MUDAH", "SEDANG", "SULIT" };
@@ -364,9 +395,35 @@ std::string Menu::getNamaPemain() const
     return namaPemain.empty() ? "Pemain 1" : namaPemain;
 }
 
+std::string Menu::getNamaPemain2() const
+{
+    return namaPemain2.empty() ? "Pemain 2" : namaPemain2;
+}
+
+void Menu::ketikNama(std::string& nama, sf::Text& teks, sf::Uint32 ch)
+{
+    if (ch == 8) // Backspace
+    {
+        if (!nama.empty())
+        {
+            nama.erase(nama.size() - 1);
+        }
+    }
+    else if (ch >= 32 && ch < 127 && nama.size() < 16)
+    {
+        nama += static_cast<char>(ch);
+    }
+    teks.setString(nama);
+}
+
 int Menu::getTingkatKesulitan() const
 {
     return tingkatKesulitan;
+}
+
+bool Menu::apakahLawanKomputer() const
+{
+    return lawanKomputer;
 }
 
 AksiMenu Menu::prosesEvent(const sf::Event& e)
@@ -380,6 +437,12 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
             btnPengaturan.perbaruiHover(m);
             btnPapanSkor.perbaruiHover(m);
             btnKeluar.perbaruiHover(m);
+        }
+        else if (layar == LAYAR_PILIH_MODE)
+        {
+            btnModeManusia.perbaruiHover(m);
+            btnModeKomputer.perbaruiHover(m);
+            btnModeKembali.perbaruiHover(m);
         }
         else if (layar == LAYAR_SETUP_PEMAIN)
         {
@@ -411,7 +474,7 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
     {
         if (btnMulaiMain.diklik(e))
         {
-            layar = LAYAR_SETUP_PEMAIN;
+            layar = LAYAR_PILIH_MODE;
         }
         else if (btnPengaturan.diklik(e))
         {
@@ -426,30 +489,57 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
             return AKSI_KELUAR;
         }
     }
+    else if (layar == LAYAR_PILIH_MODE)
+    {
+        // Mode manusia mengisi dua nama; mode komputer mengisi nama dan tingkat.
+        if (btnModeManusia.diklik(e))
+        {
+            lawanKomputer = false;
+            teksLabelNama.setString("Nama Pemain 1:");
+            inputNamaAktif = true;
+            inputNama2Aktif = false;
+            layar = LAYAR_SETUP_PEMAIN;
+        }
+        else if (btnModeKomputer.diklik(e))
+        {
+            lawanKomputer = true;
+            teksLabelNama.setString("Nama Pemain:");
+            inputNamaAktif = true;
+            inputNama2Aktif = false;
+            layar = LAYAR_SETUP_PEMAIN;
+        }
+        else if (btnModeKembali.diklik(e))
+        {
+            layar = LAYAR_MENU_UTAMA;
+        }
+    }
     else if (layar == LAYAR_SETUP_PEMAIN)
     {
         if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == sf::Mouse::Left)
         {
             sf::Vector2f p(static_cast<float>(e.mouseButton.x), static_cast<float>(e.mouseButton.y));
             inputNamaAktif = sprInputBox.getGlobalBounds().contains(p);
+            inputNama2Aktif = !lawanKomputer && sprInputBox2.getGlobalBounds().contains(p);
         }
-        if (e.type == sf::Event::TextEntered && inputNamaAktif)
+        if (e.type == sf::Event::TextEntered)
         {
             sf::Uint32 ch = e.text.unicode;
-            if (ch == 8) // Backspace
+            if (ch == 9 && !lawanKomputer) // Tab berpindah kolom nama
             {
-                if (!namaPemain.empty())
-                {
-                    namaPemain.erase(namaPemain.size() - 1);
-                }
+                bool keKedua = !inputNama2Aktif;
+                inputNama2Aktif = keKedua;
+                inputNamaAktif = !keKedua;
             }
-            else if (ch >= 32 && ch < 127 && namaPemain.size() < 16)
+            else if (inputNamaAktif)
             {
-                namaPemain += static_cast<char>(ch);
+                ketikNama(namaPemain, teksInputNama, ch);
             }
-            teksInputNama.setString(namaPemain);
+            else if (inputNama2Aktif)
+            {
+                ketikNama(namaPemain2, teksInputNama2, ch);
+            }
         }
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 3 && lawanKomputer; i++)
         {
             if (btnDiff[i].diklik(e))
             {
@@ -459,7 +549,7 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
         }
         if (btnSetupKembali.diklik(e))
         {
-            layar = LAYAR_MENU_UTAMA;
+            layar = LAYAR_PILIH_MODE;
         }
         else if (btnSetupMulai.diklik(e))
         {
@@ -559,6 +649,9 @@ void Menu::update(float dt)
     sf::FloatRect b = teksInputNama.getGlobalBounds();
     float kx = namaPemain.empty() ? 102.0f : (b.left + b.width + 6.0f);
     kursorInput.setPosition(kx, 178.0f);
+    b = teksInputNama2.getGlobalBounds();
+    kx = namaPemain2.empty() ? 102.0f : (b.left + b.width + 6.0f);
+    kursorInput2.setPosition(kx, 294.0f);
 }
 
 void Menu::gambar(sf::RenderWindow& w) const
@@ -570,6 +663,18 @@ void Menu::gambar(sf::RenderWindow& w) const
         btnPengaturan.gambar(w);
         btnPapanSkor.gambar(w);
         btnKeluar.gambar(w);
+    }
+    else if (layar == LAYAR_PILIH_MODE)
+    {
+        w.draw(sprBgArcade);
+        w.draw(sprGemCyan);
+        w.draw(sprGemPink);
+        w.draw(teksJudulMode);
+        btnModeManusia.gambar(w);
+        w.draw(teksDescManusia);
+        btnModeKomputer.gambar(w);
+        w.draw(teksDescKomputer);
+        btnModeKembali.gambar(w);
     }
     else if (layar == LAYAR_SETUP_PEMAIN)
     {
@@ -585,14 +690,28 @@ void Menu::gambar(sf::RenderWindow& w) const
             w.draw(kursorInput);
         }
         w.draw(sprPensil);
-        w.draw(teksLabelKesulitan);
-        for (int i = 0; i < 3; i++)
+        if (lawanKomputer)
         {
-            btnDiff[i].gambar(w);
+            w.draw(teksLabelKesulitan);
+            for (int i = 0; i < 3; i++)
+            {
+                btnDiff[i].gambar(w);
+            }
+            sf::Sprite bintang = sprStarBadge;
+            bintang.setPosition(78.0f + tingkatKesulitan * 299.0f + 236.0f, 274.0f);
+            w.draw(bintang);
         }
-        sf::Sprite bintang = sprStarBadge;
-        bintang.setPosition(78.0f + tingkatKesulitan * 299.0f + 236.0f, 274.0f);
-        w.draw(bintang);
+        else
+        {
+            w.draw(teksLabelNama2);
+            w.draw(sprInputBox2);
+            w.draw(teksInputNama2);
+            if (inputNama2Aktif && waktuKursor < 0.55f)
+            {
+                w.draw(kursorInput2);
+            }
+            w.draw(sprPensil2);
+        }
 
         btnSetupKembali.gambar(w);
         btnSetupMulai.gambar(w);

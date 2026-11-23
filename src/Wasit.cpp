@@ -24,11 +24,21 @@ Wasit::Wasit(Pemain* p1, Pemain* p2)
     mulai();
 }
 
-void Wasit::mulai()
+// Mengganti pasangan pemain, misalnya saat lawan diganti dari manusia ke komputer.
+// Pertandingan perlu dimulai ulang setelahnya.
+void Wasit::aturPemain(Pemain* p1, Pemain* p2)
 {
-    giliran = 0;
+    pemain[0] = p1;
+    pemain[1] = p2;
+}
+
+void Wasit::mulai(int giliranAwal)
+{
+    giliran = (giliranAwal == 1) ? 1 : 0;
     jenisDitentukan = false;
+    pukulanPembuka = true;
     pelanggaran = false;
+    belakangGaris = false;
     juara = 0;
     keterangan = "";
     pemain[0]->aturUlang();
@@ -109,6 +119,10 @@ void Wasit::periksaPukulan(int sentuhanPertama, const std::vector<int>& bolaMasu
         keterangan = "Pelanggaran: bola putih masuk lubang.";
     }
 
+    // Lawan mendapat bola di tangan. Pelanggaran saat break membatasi penempatan
+    // di belakang garis kepala, sesuai aturan 8-ball WPA.
+    belakangGaris = pelanggaran && pukulanPembuka;
+
     // Bola 8 menentukan akhir pertandingan.
     if (delapanMasuk)
     {
@@ -122,6 +136,26 @@ void Wasit::periksaPukulan(int sentuhanPertama, const std::vector<int>& bolaMasu
             juara = lawan;
             keterangan = "Bola 8 masuk sebelum waktunya. " + lawan->getNama() + " menang.";
         }
+        return;
+    }
+
+    // Pukulan pembuka (break): bola yang masuk tidak menentukan golongan dan meja
+    // tetap terbuka. Pemukul boleh jalan lagi jika ada bola yang masuk tanpa
+    // pelanggaran; golongan ditentukan oleh pemasukan sah pertama setelah break.
+    if (pukulanPembuka)
+    {
+        pukulanPembuka = false;
+        bool adaMasuk = false;
+        for (size_t i = 0; i < bolaMasuk.size(); i++)
+        {
+            if (bolaMasuk[i] != 0 && bolaMasuk[i] != 8) adaMasuk = true;
+        }
+        if (!pelanggaran && adaMasuk)
+        {
+            keterangan = "Break: bola masuk, meja masih terbuka. " + p->getNama() + " jalan lagi.";
+            return;
+        }
+        gantiGiliran();
         return;
     }
 
@@ -175,6 +209,18 @@ Pemain* Wasit::getGiliran() const
 bool Wasit::adaPelanggaran() const
 {
     return pelanggaran;
+}
+
+// Setelah pelanggaran, pemain berikutnya menaruh bola putih di mana saja (UC-04),
+// kecuali pertandingan sudah berakhir.
+bool Wasit::adaBolaDiTangan() const
+{
+    return pelanggaran && juara == 0;
+}
+
+bool Wasit::hanyaBelakangGaris() const
+{
+    return belakangGaris;
 }
 
 Pemain* Wasit::pemenang() const

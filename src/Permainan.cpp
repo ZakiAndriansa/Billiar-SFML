@@ -1,13 +1,14 @@
 #include "Permainan.h"
+#include <cstdlib>
 #include <iostream>
 
 namespace
 {
 const float DIAMETER_BOLA = 32.0f;
-const float KEKUATAN_PER_DETIK = 70.0f;
-const float KEKUATAN_MIN = 3.0f;          // pukulan di bawah nilai ini dianggap batal
 const float LANGKAH = 1.0f / 240.0f;      // langkah fisika tetap agar bola cepat tidak menembus bola lain
-const sf::Vector2f TITIK_KEPALA(302.0f, 320.0f);
+const sf::Vector2f TITIK_KEPALA(302.0f, 320.0f);   // titik kepala, juga letak garis kepala
+const float ZONA_LUBANG_SUDUT = 40.0f;   // pusat bola putih tidak boleh ditaruh di mulut lubang
+const float ZONA_LUBANG_TENGAH = 36.0f;
 
 struct DataBola
 {
@@ -28,9 +29,11 @@ const DataBola SUSUNAN[16] = {
 }
 
 Permainan::Permainan()
-    : pemain1("Pemain 1"), pemain2("Pemain 2"), wasit(&pemain1, &pemain2), selesai(false),
-      posisiMouse(SUSUNAN[1].x, SUSUNAN[1].y), kekuatan(0.0f), menahan(false),
-      bolaBergerak(false), sisaWaktu(0.0f), sentuhanPertama(-1)
+    : pemain1("Pemain 1", sf::Vector2f(SUSUNAN[1].x, SUSUNAN[1].y)),
+      pemain2("Pemain 2", sf::Vector2f(SUSUNAN[1].x, SUSUNAN[1].y)),
+      komputer("Komputer", meja, bola), lawan(&komputer), wasit(&pemain1, &komputer), selesai(false),
+      bolaBergerak(false), menaruhBola(false), posisiTaruhSah(true), sisaWaktu(0.0f),
+      sentuhanPertama(-1)
 {
     for (int i = 0; i < 16; i++)
     {
@@ -55,14 +58,19 @@ void Permainan::susunBola()
     }
 }
 
+// Pertandingan baru: bola disusun ulang dan giliran pertama ditentukan secara acak
+// (UC-01 langkah 10).
 void Permainan::mulaiPertandingan()
 {
     susunBola();
-    wasit.mulai();
+    wasit.mulai(std::rand() % 2);
     selesai = false;
     bolaBergerak = false;
-    menahan = false;
-    kekuatan = 0.0f;
+    menaruhBola = false;
+    posisiTaruhSah = true;
+    pemain1.batalkan();
+    pemain2.batalkan();
+    komputer.batalkan();
     stik.aturKekuatan(0.0f);
     std::cout << std::endl << "Pertandingan baru. Giliran: " << wasit.getGiliran()->getNama() << std::endl;
 }
@@ -71,14 +79,37 @@ void Permainan::mulaiPertandingan()
 // bidikan, agar klik berikutnya tidak langsung memukul bola putih.
 void Permainan::batalkanBidikan()
 {
-    menahan = false;
-    kekuatan = 0.0f;
+    pemain1.batalkan();
+    pemain2.batalkan();
     stik.aturKekuatan(0.0f);
+}
+
+// Memilih lawan: komputer atau pemain manusia kedua. Panggil mulaiPertandingan()
+// setelahnya agar wasit memulai dengan pasangan pemain yang baru.
+void Permainan::aturLawanKomputer(bool status)
+{
+    lawan = status ? static_cast<Pemain*>(&komputer) : static_cast<Pemain*>(&pemain2);
+    wasit.aturPemain(&pemain1, lawan);
+}
+
+bool Permainan::apakahLawanKomputer() const
+{
+    return lawan == &komputer;
+}
+
+void Permainan::aturTingkat(Tingkat t)
+{
+    komputer.aturTingkat(t);
 }
 
 void Permainan::aturNamaPemain1(const std::string& nama)
 {
     pemain1.aturNama(nama);
+}
+
+void Permainan::aturNamaPemain2(const std::string& nama)
+{
+    pemain2.aturNama(nama);
 }
 
 void Permainan::aturWarnaMeja(const std::string& warna)
@@ -93,7 +124,7 @@ const Pemain& Permainan::getPemain1() const
 
 const Pemain& Permainan::getPemain2() const
 {
-    return pemain2;
+    return *lawan;
 }
 
 const Wasit& Permainan::getWasit() const
@@ -109,7 +140,7 @@ const Bola* Permainan::getBola(int indeks) const
 
 float Permainan::getKekuatan() const
 {
-    return kekuatan;
+    return stik.getKekuatan();
 }
 
 bool Permainan::apakahSelesai() const
@@ -117,32 +148,30 @@ bool Permainan::apakahSelesai() const
     return selesai;
 }
 
+bool Permainan::apakahMenaruhBola() const
+{
+    return menaruhBola;
+}
+
+// Gerakan mouse diteruskan ke semua pemain manusia, sedangkan klik hanya kepada
+// pemain yang sedang mendapat giliran. Komputer mengabaikan masukan ini.
 void Permainan::prosesEvent(const sf::Event& e)
 {
     if (e.type == sf::Event::MouseMoved)
     {
-        posisiMouse = sf::Vector2f(static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y));
+        pemain1.bacaEvent(e);
+        pemain2.bacaEvent(e);
     }
     else if (e.type == sf::Event::MouseButtonPressed && e.mouseButton.button == sf::Mouse::Left)
     {
         if (!bolaBergerak && !selesai)
         {
-            menahan = true;
+            wasit.getGiliran()->bacaEvent(e);
         }
     }
     else if (e.type == sf::Event::MouseButtonReleased && e.mouseButton.button == sf::Mouse::Left)
     {
-        if (menahan && !bolaBergerak && kekuatan >= KEKUATAN_MIN)
-        {
-            stik.pukul(*bola[0]);
-            bolaBergerak = true;
-            sisaWaktu = 0.0f;
-            sentuhanPertama = -1;
-            bolaMasuk.clear();
-        }
-        menahan = false;
-        kekuatan = 0.0f;
-        stik.aturKekuatan(kekuatan);
+        wasit.getGiliran()->bacaEvent(e);
     }
     else if (e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::R && !bolaBergerak)
     {
@@ -152,6 +181,29 @@ void Permainan::prosesEvent(const sf::Event& e)
 
 void Permainan::update(float dt)
 {
+    // Bola di tangan diselesaikan dulu sebelum pemain boleh membidik.
+    if (menaruhBola && !bolaBergerak && !selesai)
+    {
+        prosesTaruhBola(dt);
+        if (menaruhBola)
+        {
+            return;
+        }
+    }
+
+    // Selama bola diam, pemain yang mendapat giliran mengendalikan stik. Pemanggilan
+    // ini polimorfik: PemainManusia membaca mouse, PemainKomputer menghitung sendiri.
+    if (!bolaBergerak && !selesai)
+    {
+        if (wasit.getGiliran()->ambilGiliran(stik, *bola[0], dt))
+        {
+            bolaBergerak = true;
+            sisaWaktu = 0.0f;
+            sentuhanPertama = -1;
+            bolaMasuk.clear();
+        }
+    }
+
     if (bolaBergerak)
     {
         // Batas 0,25 detik mencegah lonjakan saat jendela sempat tertahan.
@@ -166,21 +218,7 @@ void Permainan::update(float dt)
             bolaBergerak = false;
             selesaiPukulan();
         }
-        return;
     }
-
-    if (menahan)
-    {
-        kekuatan += KEKUATAN_PER_DETIK * dt;
-        if (kekuatan > 100.0f)
-        {
-            kekuatan = 100.0f;
-        }
-    }
-
-    stik.bidik(posisiMouse - bola[0]->getPosisi());
-    stik.aturKekuatan(kekuatan);
-    stik.ikuti(bola[0]->getPosisi());
 }
 
 void Permainan::langkahFisika(float h)
@@ -245,6 +283,22 @@ void Permainan::selesaiPukulan()
         kembalikanBolaPutih();
     }
 
+    // Pelanggaran memberi lawan bola di tangan (UC-04). Bidikan yang tersisa
+    // dibatalkan agar klik untuk menaruh bola tidak bercampur dengan pukulan.
+    menaruhBola = wasit.adaBolaDiTangan();
+    if (menaruhBola)
+    {
+        pemain1.batalkan();
+        pemain2.batalkan();
+        wasit.getGiliran()->batalkan();
+        stik.aturKekuatan(0.0f);
+        if (wasit.hanyaBelakangGaris() && bola[0]->getPosisi().x > TITIK_KEPALA.x)
+        {
+            kembalikanBolaPutih();
+        }
+        posisiTaruhSah = posisiSah(bola[0]->getPosisi());
+    }
+
     if (wasit.pemenang())
     {
         selesai = true;
@@ -254,8 +308,83 @@ void Permainan::selesaiPukulan()
     }
 
     std::cout << "  Skor " << pemain1.getNama() << ": " << pemain1.getSkor() << ", "
-              << pemain2.getNama() << ": " << pemain2.getSkor()
+              << lawan->getNama() << ": " << lawan->getSkor()
               << ". Giliran: " << wasit.getGiliran()->getNama() << std::endl;
+    if (menaruhBola)
+    {
+        std::cout << "  " << wasit.getGiliran()->getNama() << " mendapat bola di tangan"
+                  << (wasit.hanyaBelakangGaris() ? " di belakang garis kepala." : ".") << std::endl;
+    }
+}
+
+// Daerah yang boleh ditempati pusat bola putih: seluruh meja dikurangi jari-jari
+// bola, atau hanya di belakang garis kepala setelah pelanggaran saat break.
+sf::FloatRect Permainan::areaTaruh() const
+{
+    sf::FloatRect b = meja.getBatas();
+    float r = DIAMETER_BOLA / 2.0f;
+    sf::FloatRect a(b.left + r, b.top + r, b.width - 2.0f * r, b.height - 2.0f * r);
+    if (wasit.hanyaBelakangGaris())
+    {
+        a.width = TITIK_KEPALA.x - a.left;
+    }
+    return a;
+}
+
+// UC-04 langkah 4: posisi sah jika berada di dalam area, tidak menimpa bola lain,
+// dan tidak berada di mulut lubang.
+bool Permainan::posisiSah(sf::Vector2f p) const
+{
+    sf::FloatRect a = areaTaruh();
+    if (p.x < a.left || p.x > a.left + a.width || p.y < a.top || p.y > a.top + a.height)
+    {
+        return false;
+    }
+    for (int i = 1; i < 16; i++)
+    {
+        if (bola[i]->statusBola())
+        {
+            continue;
+        }
+        sf::Vector2f d = bola[i]->getPosisi() - p;
+        if (d.x * d.x + d.y * d.y < DIAMETER_BOLA * DIAMETER_BOLA)
+        {
+            return false;
+        }
+    }
+    for (int i = 0; i < 6; i++)
+    {
+        float zona = (i == 1 || i == 4) ? ZONA_LUBANG_TENGAH : ZONA_LUBANG_SUDUT;
+        sf::Vector2f d = meja.posisiLubang(i) - p;
+        if (d.x * d.x + d.y * d.y < zona * zona)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Bola putih mengikuti posisi pilihan pemain, dijepit agar tetap di dalam area.
+// Pemain hanya bisa menaruhnya pada posisi yang sah (UC-04 langkah 5 dan 6).
+void Permainan::prosesTaruhBola(float dt)
+{
+    sf::FloatRect a = areaTaruh();
+    sf::Vector2f p = bola[0]->getPosisi();
+    bool pilih = wasit.getGiliran()->taruhBolaPutih(p, a, dt);
+
+    if (p.x < a.left) p.x = a.left;
+    if (p.x > a.left + a.width) p.x = a.left + a.width;
+    if (p.y < a.top) p.y = a.top;
+    if (p.y > a.top + a.height) p.y = a.top + a.height;
+
+    bola[0]->aturUlang(p);
+    posisiTaruhSah = posisiSah(p);
+    if (pilih && posisiTaruhSah)
+    {
+        menaruhBola = false;
+        std::cout << "  " << wasit.getGiliran()->getNama() << " menaruh bola putih di ("
+                  << static_cast<int>(p.x) << ", " << static_cast<int>(p.y) << ")." << std::endl;
+    }
 }
 
 // Bola putih yang masuk dikembalikan ke titik kepala. Jika titik itu terhalang,
@@ -291,11 +420,35 @@ void Permainan::kembalikanBolaPutih()
 void Permainan::gambar(sf::RenderWindow& w)
 {
     meja.gambar(w);
+
+    if (menaruhBola && wasit.hanyaBelakangGaris())
+    {
+        // Garis kepala sebagai batas penempatan setelah pelanggaran saat break.
+        sf::FloatRect b = meja.getBatas();
+        sf::RectangleShape garis(sf::Vector2f(2.0f, b.height));
+        garis.setPosition(TITIK_KEPALA.x - 1.0f, b.top);
+        garis.setFillColor(sf::Color(255, 255, 255, 110));
+        w.draw(garis);
+    }
+
     for (int i = 0; i < 16; i++)
     {
         bola[i]->gambar(w);
     }
-    if (!bolaBergerak && !selesai)
+
+    if (menaruhBola && !selesai)
+    {
+        // UC-04 langkah 4: lingkaran hijau berarti posisi sah, merah berarti tidak.
+        float r = DIAMETER_BOLA / 2.0f + 5.0f;
+        sf::CircleShape tanda(r);
+        tanda.setOrigin(r, r);
+        tanda.setPosition(bola[0]->getPosisi());
+        tanda.setFillColor(sf::Color::Transparent);
+        tanda.setOutlineThickness(3.0f);
+        tanda.setOutlineColor(posisiTaruhSah ? sf::Color(80, 230, 110) : sf::Color(235, 70, 60));
+        w.draw(tanda);
+    }
+    else if (!bolaBergerak && !selesai)
     {
         stik.gambar(w);
     }
