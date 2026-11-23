@@ -2,7 +2,8 @@
 #include "Meja.h"
 #include "Bola.h"
 #include "Stik.h"
-#include "Pemain.h"
+#include "PemainManusia.h"
+#include "PemainKomputer.h"
 #include "Wasit.h"
 #include <SFML/Graphics.hpp>
 #include <vector>
@@ -14,14 +15,15 @@ private:
     Meja meja;
     Stik stik;
     Bola* bola[16];
-    Pemain pemain1;
-    Pemain pemain2;
-    Wasit wasit;                  // harus dideklarasikan setelah kedua pemain
+    PemainManusia pemain1;
+    PemainManusia pemain2;        // lawan saat mode dua pemain
+    PemainKomputer komputer;      // lawan saat mode melawan komputer
+    Pemain* lawan;                // menunjuk pemain2 atau komputer
+    Wasit wasit;                  // harus dideklarasikan setelah semua pemain
     bool selesai;
-    sf::Vector2f posisiMouse;
-    float kekuatan;
-    bool menahan;
     bool bolaBergerak;
+    bool menaruhBola;             // bola di tangan: pemain sedang menaruh bola putih
+    bool posisiTaruhSah;          // posisi bola putih saat ini boleh ditempati
     float sisaWaktu;
     int sentuhanPertama;          // nomor bola pertama yang disentuh bola putih, -1 jika belum ada
     std::vector<int> bolaMasuk;   // nomor bola yang masuk lubang selama satu pukulan
@@ -31,6 +33,9 @@ private:
     bool semuaBerhenti() const;
     void selesaiPukulan();
     void kembalikanBolaPutih();
+    sf::FloatRect areaTaruh() const;
+    bool posisiSah(sf::Vector2f p) const;
+    void prosesTaruhBola(float dt);
 
 public:
     Permainan();
@@ -38,6 +43,10 @@ public:
     void mulaiPertandingan();
     void batalkanBidikan();
     void aturNamaPemain1(const std::string& nama);
+    void aturNamaPemain2(const std::string& nama);
+    void aturLawanKomputer(bool status);
+    bool apakahLawanKomputer() const;
+    void aturTingkat(Tingkat t);
     void aturWarnaMeja(const std::string& warna);
     const Pemain& getPemain1() const;
     const Pemain& getPemain2() const;
@@ -45,6 +54,7 @@ public:
     const Bola* getBola(int indeks) const;
     float getKekuatan() const;
     bool apakahSelesai() const;
+    bool apakahMenaruhBola() const;
     void prosesEvent(const sf::Event& e);
     void update(float dt);
     void gambar(sf::RenderWindow& w);

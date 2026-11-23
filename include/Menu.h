@@ -7,6 +7,7 @@
 enum LayarAktif
 {
     LAYAR_MENU_UTAMA,
+    LAYAR_PILIH_MODE,
     LAYAR_SETUP_PEMAIN,
     LAYAR_PENGATURAN,
     LAYAR_BERMAIN,
@@ -64,10 +65,26 @@ private:
     Tombol btnPapanSkor;
     Tombol btnKeluar;
 
+    // Pilih Mode: 1 lawan 1 dengan manusia atau melawan komputer
+    sf::Text teksJudulMode;
+    sf::Text teksDescManusia;
+    sf::Text teksDescKomputer;
+    Tombol btnModeManusia;
+    Tombol btnModeKomputer;
+    Tombol btnModeKembali;
+
     // Setup Pemain
     std::string namaPemain;
     int tingkatKesulitan; // 0 = Mudah, 1 = Sedang, 2 = Sulit
+    bool lawanKomputer;   // mode yang dipilih di layar Pilih Mode
     bool inputNamaAktif;
+    std::string namaPemain2;  // dipakai pada mode 1 lawan 1 manusia
+    bool inputNama2Aktif;
+    sf::Text teksLabelNama2;
+    sf::Text teksInputNama2;
+    sf::Sprite sprInputBox2;
+    sf::Sprite sprPensil2;
+    sf::RectangleShape kursorInput2;
     sf::Text teksJudulSetup;
     sf::Text teksLabelNama;
     sf::Text teksInputNama;
@@ -127,6 +144,7 @@ private:
     void aturTeksJudul(sf::Text& t, const std::string& isi, unsigned int ukuran, sf::Vector2f tengah);
     void aturTeksLabel(sf::Text& t, const std::string& isi, unsigned int ukuran, sf::Vector2f posisi);
     void perbaruiTampilanKesulitan();
+    void ketikNama(std::string& nama, sf::Text& teks, sf::Uint32 ch);
     void perbaruiTampilanKain();
     void perbaruiSliderDariMouse(float mouseX);
     void sinkronSliderVisual();
@@ -139,7 +157,9 @@ public:
     const sf::Font& getFont() const;
 
     std::string getNamaPemain() const;
+    std::string getNamaPemain2() const;
     int getTingkatKesulitan() const;
+    bool apakahLawanKomputer() const;
 
     AksiMenu prosesEvent(const sf::Event& e);
     void update(float dt);

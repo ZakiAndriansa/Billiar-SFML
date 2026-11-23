@@ -6,10 +6,14 @@ Tugas Minggu 3 (WBS 3.3): Membuat garis bidik dan indikator kekuatan
 PIC: User (Grafis dan Antarmuka)
 Tugas Minggu 3 (WBS 3.2): Membuat gerak, gesekan, dan tumbukan bola
 Tugas Minggu 4 (WBS 3.4): Membuat aturan 8-ball, giliran, dan pelanggaran
+Tugas Minggu 5 (WBS 4.1): Membuat pemilihan bola sasaran lawan komputer
+Tugas Minggu 5 (WBS 4.2): Membuat tingkat Mudah, Sedang, dan Sulit
+Tugas Minggu 6 (WBS 5.5): Membuat penempatan bola putih
+Tambahan: Pop up kemenangan dengan animasi dan konfeti
 PIC: Zaki (Fisika dan Gameplay)
 Software: Dev-C++ 5.11
 Tgl Pembuatan : 14 November 2026
-Tgl Revisi terakhir: 15 November 2026
+Tgl Revisi terakhir: 23 November 2026
 --------------------------------------------
 Deskripsi:
 Meja, enam lubang, dan enam belas bola ditampilkan. Stik
@@ -21,6 +25,14 @@ bertumbukan, memantul dari tepi, dan masuk lubang. Bola tampak
 menggelinding. Wasit memeriksa setiap pukulan dengan aturan
 8-ball untuk Pemain 1 dan Pemain 2; hasil, skor, dan giliran
 dicetak di konsol sampai tampilan skor dibuat (WBS 5.3).
+Pemain 1 melawan komputer. Komputer memilih bola sasaran dan
+lubang dengan metode ghost ball, membuang lintasan yang terhalang,
+lalu memukul dengan galat sesuai tingkat yang dipilih di layar
+persiapan pemain. Giliran pertama ditentukan secara acak.
+Setelah pelanggaran, lawan mendapat bola di tangan: bola putih
+mengikuti mouse dan ditaruh dengan klik kiri pada posisi yang
+sah (lingkaran hijau). Pelanggaran saat break membatasinya di
+belakang garis kepala. Komputer memilih posisi terbaik sendiri.
 Tombol R memulai pertandingan baru.
 -------------------------------------------*/
 
@@ -29,9 +41,13 @@ Tombol R memulai pertandingan baru.
 #include "Pengaturan.h"
 #include "Menu.h"
 #include "HUD.h"
+#include "PopupPemenang.h"
+#include <cstdlib>
+#include <ctime>
 
 int main()
 {
+    std::srand(static_cast<unsigned int>(std::time(0)));
     sf::RenderWindow window(
         sf::VideoMode(1024, 640),
         "Billiard 8-Ball",
@@ -43,6 +59,7 @@ int main()
     Menu menu(&pengaturan);
     Permainan permainan;
     HUD hud;
+    PopupPemenang popup;
     sf::Clock jam;
 
     while (window.isOpen())
@@ -60,6 +77,23 @@ int main()
 
             if (menu.getLayar() == LAYAR_BERMAIN)
             {
+                // Selama pop up kemenangan tampil, hanya pop up yang menerima masukan.
+                if (popup.apakahAktif())
+                {
+                    AksiPopup aksiPopup = popup.prosesEvent(event);
+                    if (aksiPopup == POPUP_MAIN_LAGI)
+                    {
+                        popup.sembunyikan();
+                        permainan.mulaiPertandingan();
+                    }
+                    else if (aksiPopup == POPUP_MENU_UTAMA)
+                    {
+                        popup.sembunyikan();
+                        menu.aturLayar(LAYAR_MENU_UTAMA);
+                    }
+                    continue;
+                }
+
                 if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
                 {
                     menu.aturLayar(LAYAR_JEDA);
@@ -94,8 +128,20 @@ int main()
                 }
                 else if (aksi == AKSI_MULAI_PERTANDINGAN)
                 {
+                    // Nama diambil dari layar Persiapan Pemain: dua nama pada mode
+                    // manusia, atau satu nama dan tingkat pada mode komputer.
+                    bool lawanKomputer = menu.apakahLawanKomputer();
                     permainan.aturNamaPemain1(menu.getNamaPemain());
+                    if (!lawanKomputer)
+                    {
+                        permainan.aturNamaPemain2(menu.getNamaPemain2());
+                    }
                     permainan.aturWarnaMeja(pengaturan.getWarnaMeja());
+                    permainan.aturLawanKomputer(lawanKomputer);
+                    if (lawanKomputer)
+                    {
+                        permainan.aturTingkat(static_cast<Tingkat>(menu.getTingkatKesulitan()));
+                    }
                     permainan.mulaiPertandingan();
                 }
                 else if (aksi == AKSI_TERAPKAN_PENGATURAN)
@@ -116,6 +162,17 @@ int main()
         {
             permainan.update(dt);
             hud.perbarui(permainan);
+
+            // Pop up kemenangan muncul sekali ketika pertandingan selesai.
+            if (permainan.apakahSelesai() && !popup.apakahAktif())
+            {
+                popup.tampilkan(permainan);
+            }
+            else if (!permainan.apakahSelesai() && popup.apakahAktif())
+            {
+                popup.sembunyikan();
+            }
+            popup.update(dt);
         }
         else
         {
@@ -127,6 +184,7 @@ int main()
         {
             permainan.gambar(window);
             hud.gambar(window);
+            popup.gambar(window);
         }
         else if (menu.getLayar() == LAYAR_JEDA)
         {

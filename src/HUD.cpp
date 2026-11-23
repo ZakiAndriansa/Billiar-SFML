@@ -139,7 +139,16 @@ void HUD::perbarui(const Permainan& permainan)
 
     bool giliranP1 = (wasit.getGiliran() == &p1);
     sprAvatarP1.setTexture(giliranP1 ? texAvatarP1Active : texAvatarP1Idle);
-    sprAvatarP2.setTexture(giliranP1 ? texAvatarP2Idle : texAvatarP2Active);
+    // Avatar komputer hanya untuk lawan komputer; pada mode 1 lawan 1 manusia,
+    // Pemain 2 memakai avatar manusia yang sama dengan Pemain 1.
+    if (p2.apakahKomputer())
+    {
+        sprAvatarP2.setTexture(giliranP1 ? texAvatarP2Idle : texAvatarP2Active);
+    }
+    else
+    {
+        sprAvatarP2.setTexture(giliranP1 ? texAvatarP1Idle : texAvatarP1Active);
+    }
     teksNamaP1.setFillColor(giliranP1 ? sf::Color::White : sf::Color(185, 202, 224));
     teksNamaP2.setFillColor(!giliranP1 ? sf::Color::White : sf::Color(185, 202, 224));
 
@@ -264,12 +273,34 @@ void HUD::perbarui(const Permainan& permainan)
     {
         ket = "Pemenang: " + wasit.pemenang()->getNama() + " - Tekan R untuk main lagi";
     }
+    else if (permainan.apakahMenaruhBola())
+    {
+        // Bola di tangan: pesan pelanggaran tetap terlihat, ditambah petunjuk menaruh bola.
+        std::string nama = wasit.getGiliran()->getNama();
+        std::string petunjuk = wasit.getGiliran()->apakahKomputer()
+            ? nama + " menaruh bola putih..."
+            : "Bola di tangan, klik kiri untuk menaruh.";
+        ket = ket.empty() ? petunjuk : ket + " " + petunjuk;
+    }
     else if (ket.empty())
     {
-        ket = "Giliran " + wasit.getGiliran()->getNama() + " - Tahan klik kiri untuk memukul";
+        // Petunjuk mouse hanya untuk pemain manusia; saat giliran komputer cukup
+        // ditampilkan bahwa komputer sedang membidik.
+        if (wasit.getGiliran()->apakahKomputer())
+        {
+            ket = "Giliran " + wasit.getGiliran()->getNama() + " - sedang membidik...";
+        }
+        else
+        {
+            ket = "Giliran " + wasit.getGiliran()->getNama() + " - Tahan klik kiri untuk memukul";
+        }
     }
     teksStatusWasit.setString(ket);
     sf::FloatRect bs = teksStatusWasit.getLocalBounds();
+    // Pesan yang panjang diperkecil agar tetap muat di dalam kotak status.
+    const float LEBAR_MAKS = 425.0f;
+    float skala = (bs.width > LEBAR_MAKS) ? LEBAR_MAKS / bs.width : 1.0f;
+    teksStatusWasit.setScale(skala, skala);
     teksStatusWasit.setOrigin(bs.left + bs.width / 2.0f, bs.top + bs.height / 2.0f);
     teksStatusWasit.setPosition(623.0f, 616.0f);
 }

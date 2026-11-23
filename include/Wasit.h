@@ -12,7 +12,9 @@ private:
     Pemain* pemain[2];
     int giliran;
     bool jenisDitentukan;
+    bool pukulanPembuka;      // pukulan berikutnya adalah break
     bool pelanggaran;
+    bool belakangGaris;       // bola di tangan hanya di belakang garis kepala (pelanggaran saat break)
     Pemain* juara;
     std::string keterangan;
 
@@ -21,10 +23,13 @@ private:
 
 public:
     Wasit(Pemain* p1, Pemain* p2);
-    void mulai();
+    void aturPemain(Pemain* p1, Pemain* p2);
+    void mulai(int giliranAwal = 0);
     void periksaPukulan(int sentuhanPertama, const std::vector<int>& bolaMasuk, Bola* const bola[16]);
     Pemain* getGiliran() const;
     bool adaPelanggaran() const;
+    bool adaBolaDiTangan() const;
+    bool hanyaBelakangGaris() const;
     Pemain* pemenang() const;
     std::string getKeterangan() const;
 };
