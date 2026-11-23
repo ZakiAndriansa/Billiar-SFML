@@ -5,6 +5,14 @@ Pemain::Pemain(const std::string& namaAwal)
 {
 }
 
+void Pemain::aturNama(const std::string& namaBaru)
+{
+    if (!namaBaru.empty())
+    {
+        nama = namaBaru;
+    }
+}
+
 std::string Pemain::getNama() const
 {
     return nama;

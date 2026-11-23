@@ -2,6 +2,7 @@
 #include "ObjekGame.h"
 #include "Bola.h"
 #include <SFML/Graphics.hpp>
+#include <string>
 
 class Meja : public ObjekGame
 {
@@ -19,6 +20,7 @@ private:
 
 public:
 	Meja();
+	void aturWarna(const std::string& namaWarna);
 	void pantulkan(Bola& b);
 	bool cekLubang(Bola& b);
 	sf::Vector2f posisiLubang(int i) const;

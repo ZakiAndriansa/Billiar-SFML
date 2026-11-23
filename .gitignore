@@ -10,3 +10,18 @@ Makefile.win
 # File temporary OS
 Thumbs.db
 .DS_Store
+
+# DLL runtime compiler MinGW
+libgcc_s_*.dll
+libstdc++*.dll
+libwinpthread*.dll
+
+# Aset lama, arsip referensi, dan font cadangan (tidak ikut push)
+assets/ui-old/
+assets/screens/Asset Gambar/
+assets/screens/screen_*.png
+assets/fonts/georgia.ttf
+assets/fonts/georgiab.ttf
+assets/screens/referensi-atas.jpg
+assets/screens/Gemini_Generated_Image_*.jpg
+assets/screens/Referensi*

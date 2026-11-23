@@ -26,17 +26,23 @@ Tombol R memulai pertandingan baru.
 
 #include <SFML/Graphics.hpp>
 #include "Permainan.h"
+#include "Pengaturan.h"
+#include "Menu.h"
+#include "HUD.h"
 
 int main()
 {
     sf::RenderWindow window(
         sf::VideoMode(1024, 640),
-        "Billiard 8-Ball - WBS 3.1 sampai 3.4",
+        "Billiard 8-Ball",
         sf::Style::Titlebar | sf::Style::Close
     );
     window.setFramerateLimit(60);
 
+    Pengaturan pengaturan;
+    Menu menu(&pengaturan);
     Permainan permainan;
+    HUD hud;
     sf::Clock jam;
 
     while (window.isOpen())
@@ -49,17 +55,82 @@ int main()
             if (event.type == sf::Event::Closed)
             {
                 window.close();
+                continue;
+            }
+
+            if (menu.getLayar() == LAYAR_BERMAIN)
+            {
+                if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
+                {
+                    menu.aturLayar(LAYAR_JEDA);
+                    continue;
+                }
+
+                AksiHUD aksiHud = hud.prosesEvent(event);
+                if (aksiHud == HUD_BUKA_JEDA)
+                {
+                    menu.aturLayar(LAYAR_JEDA);
+                    continue;
+                }
+                else if (aksiHud == HUD_BUKA_PENGATURAN)
+                {
+                    menu.aturLayar(LAYAR_PENGATURAN);
+                    continue;
+                }
+                else if (aksiHud == HUD_ULANG_PERTANDINGAN)
+                {
+                    permainan.mulaiPertandingan();
+                    continue;
+                }
+
+                permainan.prosesEvent(event);
             }
             else
             {
-                permainan.prosesEvent(event);
+                AksiMenu aksi = menu.prosesEvent(event);
+                if (aksi == AKSI_KELUAR)
+                {
+                    window.close();
+                }
+                else if (aksi == AKSI_MULAI_PERTANDINGAN)
+                {
+                    permainan.aturNamaPemain1(menu.getNamaPemain());
+                    permainan.aturWarnaMeja(pengaturan.getWarnaMeja());
+                    permainan.mulaiPertandingan();
+                }
+                else if (aksi == AKSI_TERAPKAN_PENGATURAN)
+                {
+                    permainan.aturWarnaMeja(pengaturan.getWarnaMeja());
+                }
             }
         }
 
-        permainan.update(dt);
+        if (menu.getLayar() == LAYAR_BERMAIN)
+        {
+            permainan.update(dt);
+            hud.perbarui(permainan);
+        }
+        else
+        {
+            menu.update(dt);
+        }
 
-        window.clear(sf::Color(20, 20, 20));
-        permainan.gambar(window);
+        window.clear(sf::Color(30, 43, 60));
+        if (menu.getLayar() == LAYAR_BERMAIN)
+        {
+            permainan.gambar(window);
+            hud.gambar(window);
+        }
+        else if (menu.getLayar() == LAYAR_JEDA)
+        {
+            permainan.gambar(window);
+            hud.gambar(window);
+            menu.gambar(window);
+        }
+        else
+        {
+            menu.gambar(window);
+        }
         window.display();
     }
 

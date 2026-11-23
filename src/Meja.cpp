@@ -16,49 +16,76 @@ Meja::Meja() : ObjekGame(sf::Vector2f(32.0f, 50.0f))
     batas.width  = 840.0f;
     batas.height = 420.0f;
 
-    warna = sf::Color(20, 105, 50);
-
     const float lx[6] = { 60.0f, 480.0f, 900.0f,  60.0f, 480.0f, 900.0f };
     const float ly[6] = { 60.0f,  56.0f,  60.0f, 480.0f, 484.0f, 480.0f };
-
-    const char* berkasLubang[6] = {
-        "assets/textures/meja_green/pockets/pocket_1_top_left.png",
-        "assets/textures/meja_green/pockets/pocket_2_top_middle.png",
-        "assets/textures/meja_green/pockets/pocket_3_top_right.png",
-        "assets/textures/meja_green/pockets/pocket_4_bottom_left.png",
-        "assets/textures/meja_green/pockets/pocket_5_bottom_middle.png",
-        "assets/textures/meja_green/pockets/pocket_6_bottom_right.png"
-    };
 
     for (int i = 0; i < 6; i++)
     {
         lubang[i] = sf::Vector2f(posisi.x + lx[i], posisi.y + ly[i]);
         radiusTangkap[i] = (i == 1 || i == 4) ? TANGKAP_TENGAH : TANGKAP_SUDUT;
+        siapLubang[i] = false;
+    }
+    siapMeja = false;
 
-        siapLubang[i] = teksturLubang[i].loadFromFile(berkasLubang[i]);
+    aturWarna("hijau");
+}
+
+void Meja::aturWarna(const std::string& namaWarna)
+{
+    std::string folder = "meja_green";
+    std::string berkasMeja = "table_green_lubang_transparan.png";
+    warna = sf::Color(20, 105, 50);
+
+    if (namaWarna == "biru")
+    {
+        folder = "meja_blue";
+        berkasMeja = "table_blue_lubang_transparan.png";
+        warna = sf::Color(20, 85, 135);
+    }
+    else if (namaWarna == "merah")
+    {
+        folder = "meja_red";
+        berkasMeja = "table_red_lubang_transparan.png";
+        warna = sf::Color(120, 25, 35);
+    }
+
+    const char* namaLubang[6] = {
+        "pocket_1_top_left.png",
+        "pocket_2_top_middle.png",
+        "pocket_3_top_right.png",
+        "pocket_4_bottom_left.png",
+        "pocket_5_bottom_middle.png",
+        "pocket_6_bottom_right.png"
+    };
+
+    for (int i = 0; i < 6; i++)
+    {
+        std::string pathLubang = "assets/textures/" + folder + "/pockets/" + namaLubang[i];
+        siapLubang[i] = teksturLubang[i].loadFromFile(pathLubang);
         if (siapLubang[i])
         {
             teksturLubang[i].setSmooth(true);
-            spriteLubang[i].setTexture(teksturLubang[i]);
-            spriteLubang[i].setOrigin(40.0f, 40.0f);  
+            spriteLubang[i].setTexture(teksturLubang[i], true);
+            spriteLubang[i].setOrigin(40.0f, 40.0f);
             spriteLubang[i].setPosition(lubang[i]);
         }
         else
         {
-            std::cerr << "[ERROR] Gagal memuat " << berkasLubang[i] << std::endl;
+            std::cerr << "[ERROR] Gagal memuat " << pathLubang << std::endl;
         }
     }
 
-    siapMeja = teksturMeja.loadFromFile("assets/textures/meja_green/table_green_lubang_transparan.png");
+    std::string pathMeja = "assets/textures/" + folder + "/" + berkasMeja;
+    siapMeja = teksturMeja.loadFromFile(pathMeja);
     if (siapMeja)
     {
         teksturMeja.setSmooth(true);
-        spriteMeja.setTexture(teksturMeja);
+        spriteMeja.setTexture(teksturMeja, true);
         spriteMeja.setPosition(posisi);
     }
     else
     {
-        std::cerr << "[ERROR] Gagal memuat tekstur meja!" << std::endl;
+        std::cerr << "[ERROR] Gagal memuat tekstur meja: " << pathMeja << std::endl;
     }
 }
 
