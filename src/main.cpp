@@ -8,12 +8,14 @@ Tugas Minggu 3 (WBS 3.2): Membuat gerak, gesekan, dan tumbukan bola
 Tugas Minggu 4 (WBS 3.4): Membuat aturan 8-ball, giliran, dan pelanggaran
 Tugas Minggu 5 (WBS 4.1): Membuat pemilihan bola sasaran lawan komputer
 Tugas Minggu 5 (WBS 4.2): Membuat tingkat Mudah, Sedang, dan Sulit
+Tugas Minggu 5 (WBS 5.2): Memasang efek suara dan musik (PengelolaSuara)
+Tugas Minggu 6 (WBS 5.4): Penyimpanan skor berkas lokal dan papan skor (PapanSkor)
 Tugas Minggu 6 (WBS 5.5): Membuat penempatan bola putih
 Tambahan: Pop up kemenangan dengan animasi dan konfeti
-PIC: Zaki (Fisika dan Gameplay)
+PIC: Zaki (Fisika & Gameplay), Fadlan (Audio, Papan Skor, Pengujian), Soleh (UI)
 Software: Dev-C++ 5.11
 Tgl Pembuatan : 14 November 2026
-Tgl Revisi terakhir: 23 November 2026
+Tgl Revisi terakhir: 28 November 2026
 --------------------------------------------
 Deskripsi:
 Meja, enam lubang, dan enam belas bola ditampilkan. Stik
@@ -39,6 +41,8 @@ Tombol R memulai pertandingan baru.
 #include <SFML/Graphics.hpp>
 #include "Permainan.h"
 #include "Pengaturan.h"
+#include "PengelolaSuara.h"
+#include "PapanSkor.h"
 #include "Menu.h"
 #include "HUD.h"
 #include "PopupPemenang.h"
@@ -56,8 +60,18 @@ int main()
     window.setFramerateLimit(60);
 
     Pengaturan pengaturan;
+    PengelolaSuara suara;
+    suara.muatSemua();
+    suara.terapkanPengaturan(pengaturan);
+    suara.mulaiMusik();
+
+    PapanSkor papanSkor("papan_skor.txt");
     Menu menu(&pengaturan);
+    menu.aturPengelolaSuara(&suara);
+    menu.aturPapanSkor(&papanSkor);
+
     Permainan permainan;
+    permainan.aturPengelolaSuara(&suara);
     HUD hud;
     PopupPemenang popup;
     sf::Clock jam;
@@ -81,6 +95,10 @@ int main()
                 if (popup.apakahAktif())
                 {
                     AksiPopup aksiPopup = popup.prosesEvent(event);
+                    if (aksiPopup != POPUP_TIDAK_ADA)
+                    {
+                        suara.putarEfek(SFX_KLIK_MENU);
+                    }
                     if (aksiPopup == POPUP_MAIN_LAGI)
                     {
                         popup.sembunyikan();
@@ -96,11 +114,16 @@ int main()
 
                 if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
                 {
+                    suara.putarEfek(SFX_KLIK_MENU);
                     menu.aturLayar(LAYAR_JEDA);
                     continue;
                 }
 
                 AksiHUD aksiHud = hud.prosesEvent(event);
+                if (aksiHud != HUD_TIDAK_ADA)
+                {
+                    suara.putarEfek(SFX_KLIK_MENU);
+                }
                 if (aksiHud == HUD_BUKA_JEDA)
                 {
                     menu.aturLayar(LAYAR_JEDA);
@@ -147,6 +170,7 @@ int main()
                 else if (aksi == AKSI_TERAPKAN_PENGATURAN)
                 {
                     permainan.aturWarnaMeja(pengaturan.getWarnaMeja());
+                    suara.terapkanPengaturan(pengaturan);
                 }
             }
         }
@@ -166,7 +190,23 @@ int main()
             // Pop up kemenangan muncul sekali ketika pertandingan selesai.
             if (permainan.apakahSelesai() && !popup.apakahAktif())
             {
-                popup.tampilkan(permainan);
+                int poinSkor = 0;
+                if (permainan.apakahLawanKomputer() &&
+                    permainan.getWasit().pemenang() == &permainan.getPemain1())
+                {
+                    poinSkor = PapanSkor::hitungSkorAkhir(
+                        permainan.getPemain1().getSkor(),
+                        permainan.getPemain2().getSkor(),
+                        permainan.getTingkat(),
+                        permainan.getJumlahPelanggaranP1()
+                    );
+                    papanSkor.tambahSkor(
+                        permainan.getPemain1().getNama(),
+                        poinSkor,
+                        PapanSkor::namaTingkat(permainan.getTingkat())
+                    );
+                }
+                popup.tampilkan(permainan, poinSkor);
             }
             else if (!permainan.apakahSelesai() && popup.apakahAktif())
             {

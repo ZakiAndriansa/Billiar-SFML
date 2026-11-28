@@ -4,6 +4,9 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
+class PengelolaSuara;
+class PapanSkor;
+
 enum LayarAktif
 {
     LAYAR_MENU_UTAMA,
@@ -131,7 +134,9 @@ private:
     Tombol btnJedaPengaturan;
     Tombol btnJedaMenuUtama;
 
-    // Papan Skor (kerangka UI; data file dikerjakan WBS 5.4)
+    // Papan Skor (WBS 5.4)
+    PapanSkor* papanSkor;
+    PengelolaSuara* suara;
     sf::Text teksJudulSkor;
     sf::Texture texHeaderTabel;
     sf::Sprite sprHeaderTabel;
@@ -148,9 +153,12 @@ private:
     void perbaruiTampilanKain();
     void perbaruiSliderDariMouse(float mouseX);
     void sinkronSliderVisual();
+    void putarKlik();
 
 public:
     Menu(Pengaturan* cfg);
+    void aturPengelolaSuara(PengelolaSuara* s);
+    void aturPapanSkor(PapanSkor* p);
 
     LayarAktif getLayar() const;
     void aturLayar(LayarAktif l);

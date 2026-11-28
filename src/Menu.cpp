@@ -1,4 +1,6 @@
 #include "Menu.h"
+#include "PengelolaSuara.h"
+#include "PapanSkor.h"
 #include <cstdio>
 #include <iostream>
 
@@ -8,23 +10,6 @@ const float SLIDER_X = 78.0f;
 const float SLIDER_W = 770.0f;
 const float SLIDER_SFX_Y = 338.0f;
 const float SLIDER_BGM_Y = 428.0f;
-
-struct BarisSkorContoh
-{
-    int peringkat;
-    const char* nama;
-    const char* skor;
-    const char* tingkat;
-    const char* tanggal;
-};
-
-const BarisSkorContoh DATA_CONTOH[5] = {
-    { 1, "Raka",  "1500", "Sulit",  "14 Des 2026" },
-    { 2, "Soleh", "1250", "Sedang", "13 Des 2026" },
-    { 3, "Budi",  "1100", "Sulit",  "12 Des 2026" },
-    { 4, "Andi",  "950",  "Sedang", "11 Des 2026" },
-    { 5, "Dewi",  "800",  "Mudah",  "10 Des 2026" }
-};
 }
 
 Menu::Menu(Pengaturan* cfg)
@@ -42,7 +27,9 @@ Menu::Menu(Pengaturan* cfg)
       draftWarna("hijau"),
       draftSfx(80),
       draftBgm(60),
-      sliderAktif(-1)
+      sliderAktif(-1),
+      papanSkor(0),
+      suara(0)
 {
     fontSiap = font.loadFromFile("assets/fonts/LemonDays.ttf");
     if (!fontSiap)
@@ -358,9 +345,37 @@ void Menu::perbaruiSliderDariMouse(float mouseX)
     if (rasio > 1.0f) rasio = 1.0f;
     int nilai = static_cast<int>(rasio * 100.0f + 0.5f);
 
-    if (sliderAktif == 0) draftSfx = nilai;
-    else if (sliderAktif == 1) draftBgm = nilai;
+    if (sliderAktif == 0)
+    {
+        draftSfx = nilai;
+    }
+    else if (sliderAktif == 1)
+    {
+        draftBgm = nilai;
+        if (suara)
+        {
+            suara->aturVolumeBgm(draftBgm);
+        }
+    }
     sinkronSliderVisual();
+}
+
+void Menu::putarKlik()
+{
+    if (suara)
+    {
+        suara->putarEfek(SFX_KLIK_MENU);
+    }
+}
+
+void Menu::aturPengelolaSuara(PengelolaSuara* s)
+{
+    suara = s;
+}
+
+void Menu::aturPapanSkor(PapanSkor* p)
+{
+    papanSkor = p;
 }
 
 LayarAktif Menu::getLayar() const
@@ -381,6 +396,10 @@ void Menu::aturLayar(LayarAktif l)
             perbaruiTampilanKain();
             sinkronSliderVisual();
         }
+    }
+    if (l == LAYAR_PAPAN_SKOR && papanSkor)
+    {
+        papanSkor->muat();
     }
     layar = l;
 }
@@ -474,18 +493,22 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
     {
         if (btnMulaiMain.diklik(e))
         {
+            putarKlik();
             layar = LAYAR_PILIH_MODE;
         }
         else if (btnPengaturan.diklik(e))
         {
+            putarKlik();
             aturLayar(LAYAR_PENGATURAN);
         }
         else if (btnPapanSkor.diklik(e))
         {
-            layar = LAYAR_PAPAN_SKOR;
+            putarKlik();
+            aturLayar(LAYAR_PAPAN_SKOR);
         }
         else if (btnKeluar.diklik(e))
         {
+            putarKlik();
             return AKSI_KELUAR;
         }
     }
@@ -494,6 +517,7 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
         // Mode manusia mengisi dua nama; mode komputer mengisi nama dan tingkat.
         if (btnModeManusia.diklik(e))
         {
+            putarKlik();
             lawanKomputer = false;
             teksLabelNama.setString("Nama Pemain 1:");
             inputNamaAktif = true;
@@ -502,6 +526,7 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
         }
         else if (btnModeKomputer.diklik(e))
         {
+            putarKlik();
             lawanKomputer = true;
             teksLabelNama.setString("Nama Pemain:");
             inputNamaAktif = true;
@@ -510,6 +535,7 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
         }
         else if (btnModeKembali.diklik(e))
         {
+            putarKlik();
             layar = LAYAR_MENU_UTAMA;
         }
     }
@@ -543,16 +569,19 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
         {
             if (btnDiff[i].diklik(e))
             {
+                putarKlik();
                 tingkatKesulitan = i;
                 perbaruiTampilanKesulitan();
             }
         }
         if (btnSetupKembali.diklik(e))
         {
+            putarKlik();
             layar = LAYAR_PILIH_MODE;
         }
         else if (btnSetupMulai.diklik(e))
         {
+            putarKlik();
             layar = LAYAR_BERMAIN;
             return AKSI_MULAI_PERTANDINGAN;
         }
@@ -564,6 +593,7 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
         {
             if (btnKain[i].diklik(e))
             {
+                putarKlik();
                 draftWarna = namaKain[i];
                 perbaruiTampilanKain();
             }
@@ -588,11 +618,21 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
         }
         else if (e.type == sf::Event::MouseButtonReleased && e.mouseButton.button == sf::Mouse::Left)
         {
+            if (sliderAktif == 0 && suara)
+            {
+                suara->aturVolumeSfx(draftSfx);
+                suara->putarEfek(SFX_KLIK_MENU);
+            }
             sliderAktif = -1;
         }
 
         if (btnPengaturanKembali.diklik(e))
         {
+            if (suara && pengaturan)
+            {
+                suara->terapkanPengaturan(*pengaturan);
+            }
+            putarKlik();
             layar = layarSebelumPengaturan;
         }
         else if (btnPengaturanSimpan.diklik(e))
@@ -603,6 +643,11 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
                 pengaturan->aturVolumeSfx(draftSfx);
                 pengaturan->aturVolumeBgm(draftBgm);
             }
+            if (suara && pengaturan)
+            {
+                suara->terapkanPengaturan(*pengaturan);
+            }
+            putarKlik();
             layar = layarSebelumPengaturan;
             return AKSI_TERAPKAN_PENGATURAN;
         }
@@ -611,20 +656,24 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
     {
         if (e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::Escape)
         {
+            putarKlik();
             layar = LAYAR_BERMAIN;
             return AKSI_LANJUTKAN;
         }
         if (btnJedaLanjut.diklik(e))
         {
+            putarKlik();
             layar = LAYAR_BERMAIN;
             return AKSI_LANJUTKAN;
         }
         else if (btnJedaPengaturan.diklik(e))
         {
+            putarKlik();
             aturLayar(LAYAR_PENGATURAN);
         }
         else if (btnJedaMenuUtama.diklik(e))
         {
+            putarKlik();
             layar = LAYAR_MENU_UTAMA;
         }
     }
@@ -632,6 +681,7 @@ AksiMenu Menu::prosesEvent(const sf::Event& e)
     {
         if (btnSkorKembali.diklik(e))
         {
+            putarKlik();
             layar = LAYAR_MENU_UTAMA;
         }
     }
@@ -783,88 +833,121 @@ void Menu::gambar(sf::RenderWindow& w) const
             w.draw(th);
         }
 
-        for (int r = 0; r < 5; r++)
+        const std::vector<EntriSkor>* daftar = papanSkor ? &papanSkor->getDaftar() : 0;
+        if (daftar == 0 || daftar->empty())
         {
-            float ry = 178.0f + r * 64.0f;
-            sf::Sprite rowSpr(r == 0 ? texBarisTop : texBarisNormal);
-            rowSpr.setPosition(76.0f, ry);
-            w.draw(rowSpr);
+            sf::Text teksKosong;
+            teksKosong.setFont(font);
+            teksKosong.setString("Belum ada rekor skor.");
+            teksKosong.setCharacterSize(28);
+            teksKosong.setFillColor(sf::Color(255, 225, 40));
+            teksKosong.setOutlineColor(sf::Color::Black);
+            teksKosong.setOutlineThickness(2.5f);
+            sf::FloatRect bk = teksKosong.getLocalBounds();
+            teksKosong.setOrigin(bk.left + bk.width / 2.0f, bk.top + bk.height / 2.0f);
+            teksKosong.setPosition(512.0f, 305.0f);
+            w.draw(teksKosong);
 
-            if (r < 3)
+            sf::Text teksPetunjuk;
+            teksPetunjuk.setFont(font);
+            teksPetunjuk.setString("Menangkan pertandingan melawan Komputer untuk mencatat skor!");
+            teksPetunjuk.setCharacterSize(19);
+            teksPetunjuk.setFillColor(sf::Color(210, 224, 240));
+            teksPetunjuk.setOutlineColor(sf::Color::Black);
+            teksPetunjuk.setOutlineThickness(2.0f);
+            sf::FloatRect bp = teksPetunjuk.getLocalBounds();
+            teksPetunjuk.setOrigin(bp.left + bp.width / 2.0f, bp.top + bp.height / 2.0f);
+            teksPetunjuk.setPosition(512.0f, 342.0f);
+            w.draw(teksPetunjuk);
+        }
+        else
+        {
+            size_t maksBaris = (daftar->size() < 5) ? daftar->size() : 5;
+            for (size_t r = 0; r < maksBaris; r++)
             {
-                sf::Sprite med(texMedali[r]);
-                med.setPosition(127.0f, ry + 9.0f);
-                w.draw(med);
+                const EntriSkor& entri = (*daftar)[r];
+                float ry = 178.0f + static_cast<float>(r) * 64.0f;
+                sf::Sprite rowSpr(r == 0 ? texBarisTop : texBarisNormal);
+                rowSpr.setPosition(76.0f, ry);
+                w.draw(rowSpr);
+
+                if (r < 3)
+                {
+                    sf::Sprite med(texMedali[r]);
+                    med.setPosition(127.0f, ry + 9.0f);
+                    w.draw(med);
+                }
+                else
+                {
+                    sf::Text rk;
+                    rk.setFont(font);
+                    char rbuf[8];
+                    std::sprintf(rbuf, "%u", static_cast<unsigned int>(r + 1));
+                    rk.setString(rbuf);
+                    rk.setCharacterSize(20);
+                    rk.setFillColor(sf::Color(185, 202, 224));
+                    rk.setOutlineColor(sf::Color::Black);
+                    rk.setOutlineThickness(2.0f);
+                    sf::FloatRect b = rk.getLocalBounds();
+                    rk.setOrigin(b.left + b.width / 2.0f, b.top + b.height / 2.0f);
+                    rk.setPosition(145.0f, ry + 29.0f);
+                    w.draw(rk);
+                }
+
+                sf::Sprite av(texAvatar[r]);
+                av.setPosition(247.0f, ry + 12.0f);
+                w.draw(av);
+
+                sf::Text nm;
+                nm.setFont(font);
+                nm.setString(entri.nama);
+                nm.setCharacterSize(20);
+                nm.setFillColor(sf::Color::White);
+                nm.setOutlineColor(sf::Color::Black);
+                nm.setOutlineThickness(2.0f);
+                nm.setPosition(295.0f, ry + 16.0f);
+                w.draw(nm);
+
+                char sbuf[16];
+                std::sprintf(sbuf, "%d", entri.skor);
+                sf::Text sk;
+                sk.setFont(font);
+                sk.setString(sbuf);
+                sk.setCharacterSize(20);
+                sk.setFillColor(sf::Color(255, 225, 40));
+                sk.setOutlineColor(sf::Color::Black);
+                sk.setOutlineThickness(2.0f);
+                sf::FloatRect bs = sk.getLocalBounds();
+                sk.setOrigin(bs.left + bs.width / 2.0f, bs.top + bs.height / 2.0f);
+                sk.setPosition(545.0f, ry + 29.0f);
+                w.draw(sk);
+
+                sf::Text tg;
+                tg.setFont(font);
+                tg.setString(entri.tingkat);
+                tg.setCharacterSize(20);
+                if (entri.tingkat == "Mudah") tg.setFillColor(sf::Color(110, 235, 130));
+                else if (entri.tingkat == "Sedang") tg.setFillColor(sf::Color(90, 195, 255));
+                else tg.setFillColor(sf::Color(255, 115, 115));
+                tg.setOutlineColor(sf::Color::Black);
+                tg.setOutlineThickness(2.0f);
+                sf::FloatRect bt = tg.getLocalBounds();
+                tg.setOrigin(bt.left + bt.width / 2.0f, bt.top + bt.height / 2.0f);
+                tg.setPosition(705.0f, ry + 29.0f);
+                w.draw(tg);
+
+                sf::Text dt;
+                dt.setFont(font);
+                dt.setString(entri.tanggal);
+                dt.setCharacterSize(17);
+                dt.setFillColor(sf::Color(185, 202, 224));
+                dt.setOutlineColor(sf::Color::Black);
+                dt.setOutlineThickness(2.0f);
+                sf::FloatRect bd = dt.getLocalBounds();
+                dt.setOrigin(bd.left + bd.width / 2.0f, bd.top + bd.height / 2.0f);
+                dt.setPosition(855.0f, ry + 29.0f);
+                w.draw(dt);
             }
-            else
-            {
-                sf::Text rk;
-                rk.setFont(font);
-                char rbuf[8];
-                std::sprintf(rbuf, "%d", DATA_CONTOH[r].peringkat);
-                rk.setString(rbuf);
-                rk.setCharacterSize(20);
-                rk.setFillColor(sf::Color(185, 202, 224));
-                rk.setOutlineColor(sf::Color::Black);
-                rk.setOutlineThickness(2.0f);
-                sf::FloatRect b = rk.getLocalBounds();
-                rk.setOrigin(b.left + b.width / 2.0f, b.top + b.height / 2.0f);
-                rk.setPosition(145.0f, ry + 29.0f);
-                w.draw(rk);
-            }
-
-            sf::Sprite av(texAvatar[r]);
-            av.setPosition(247.0f, ry + 12.0f);
-            w.draw(av);
-
-            sf::Text nm;
-            nm.setFont(font);
-            nm.setString(DATA_CONTOH[r].nama);
-            nm.setCharacterSize(20);
-            nm.setFillColor(sf::Color::White);
-            nm.setOutlineColor(sf::Color::Black);
-            nm.setOutlineThickness(2.0f);
-            nm.setPosition(295.0f, ry + 16.0f);
-            w.draw(nm);
-
-            sf::Text sk;
-            sk.setFont(font);
-            sk.setString(DATA_CONTOH[r].skor);
-            sk.setCharacterSize(20);
-            sk.setFillColor(sf::Color(255, 225, 40));
-            sk.setOutlineColor(sf::Color::Black);
-            sk.setOutlineThickness(2.0f);
-            sf::FloatRect bs = sk.getLocalBounds();
-            sk.setOrigin(bs.left + bs.width / 2.0f, bs.top + bs.height / 2.0f);
-            sk.setPosition(545.0f, ry + 29.0f);
-            w.draw(sk);
-
-            sf::Text tg;
-            tg.setFont(font);
-            tg.setString(DATA_CONTOH[r].tingkat);
-            tg.setCharacterSize(20);
-            std::string tStr = DATA_CONTOH[r].tingkat;
-            if (tStr == "Mudah") tg.setFillColor(sf::Color(110, 235, 130));
-            else if (tStr == "Sedang") tg.setFillColor(sf::Color(90, 195, 255));
-            else tg.setFillColor(sf::Color(255, 115, 115));
-            tg.setOutlineColor(sf::Color::Black);
-            tg.setOutlineThickness(2.0f);
-            sf::FloatRect bt = tg.getLocalBounds();
-            tg.setOrigin(bt.left + bt.width / 2.0f, bt.top + bt.height / 2.0f);
-            tg.setPosition(705.0f, ry + 29.0f);
-            w.draw(tg);
-
-            sf::Text dt;
-            dt.setFont(font);
-            dt.setString(DATA_CONTOH[r].tanggal);
-            dt.setCharacterSize(17);
-            dt.setFillColor(sf::Color(185, 202, 224));
-            dt.setOutlineColor(sf::Color::Black);
-            dt.setOutlineThickness(2.0f);
-            sf::FloatRect bd = dt.getLocalBounds();
-            dt.setOrigin(bd.left + bd.width / 2.0f, bd.top + bd.height / 2.0f);
-            dt.setPosition(855.0f, ry + 29.0f);
-            w.draw(dt);
         }
 
         w.draw(sprCueDeco);

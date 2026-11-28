@@ -69,7 +69,7 @@ private:
 
 public:
     PopupPemenang();
-    void tampilkan(const Permainan& permainan);
+    void tampilkan(const Permainan& permainan, int poinPapanSkor = 0);
     void sembunyikan();
     bool apakahAktif() const;
     AksiPopup prosesEvent(const sf::Event& e);

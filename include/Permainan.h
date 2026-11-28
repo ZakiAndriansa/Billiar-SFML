@@ -8,6 +8,8 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 
+class PengelolaSuara;
+
 // Menyatukan semua objek di meja dan menjalankan satu pertandingan.
 class Permainan
 {
@@ -27,6 +29,9 @@ private:
     float sisaWaktu;
     int sentuhanPertama;          // nomor bola pertama yang disentuh bola putih, -1 jika belum ada
     std::vector<int> bolaMasuk;   // nomor bola yang masuk lubang selama satu pukulan
+    PengelolaSuara* suara;
+    int jumlahPelanggaranP1;
+    int hitunganMasukSuara;
 
     void susunBola();
     void langkahFisika(float h);
@@ -47,7 +52,10 @@ public:
     void aturLawanKomputer(bool status);
     bool apakahLawanKomputer() const;
     void aturTingkat(Tingkat t);
+    Tingkat getTingkat() const;
     void aturWarnaMeja(const std::string& warna);
+    void aturPengelolaSuara(PengelolaSuara* s);
+    int getJumlahPelanggaranP1() const;
     const Pemain& getPemain1() const;
     const Pemain& getPemain2() const;
     const Wasit& getWasit() const;

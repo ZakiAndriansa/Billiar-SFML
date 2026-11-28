@@ -25,3 +25,6 @@ assets/fonts/georgiab.ttf
 assets/screens/referensi-atas.jpg
 assets/screens/Gemini_Generated_Image_*.jpg
 assets/screens/Referensi*
+
+# Data skor lokal hasil permainan (tidak ikut push)
+papan_skor.txt
