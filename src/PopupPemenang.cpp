@@ -109,7 +109,7 @@ float PopupPemenang::acak(float bawah, float atas)
     return bawah + (atas - bawah) * r;
 }
 
-void PopupPemenang::tampilkan(const Permainan& permainan)
+void PopupPemenang::tampilkan(const Permainan& permainan, int poinPapanSkor)
 {
     const Pemain* juara = permainan.getWasit().pemenang();
     if (juara == 0)
@@ -135,7 +135,15 @@ void PopupPemenang::tampilkan(const Permainan& permainan)
     pusatkan(teksAlasan, 512.0f, 346.0f, 430.0f);
 
     char buf[64];
-    std::sprintf(buf, "Skor akhir   %d : %d", juara->getSkor(), kalah->getSkor());
+    if (!menangKomputer && poinPapanSkor > 0)
+    {
+        std::sprintf(buf, "Skor akhir   %d : %d   |   +%d poin",
+                     juara->getSkor(), kalah->getSkor(), poinPapanSkor);
+    }
+    else
+    {
+        std::sprintf(buf, "Skor akhir   %d : %d", juara->getSkor(), kalah->getSkor());
+    }
     teksSkor.setString(buf);
     pusatkan(teksSkor, 512.0f, 372.0f, 420.0f);
 

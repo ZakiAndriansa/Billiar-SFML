@@ -1,4 +1,6 @@
 #include "Permainan.h"
+#include "PengelolaSuara.h"
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 
@@ -33,7 +35,7 @@ Permainan::Permainan()
       pemain2("Pemain 2", sf::Vector2f(SUSUNAN[1].x, SUSUNAN[1].y)),
       komputer("Komputer", meja, bola), lawan(&komputer), wasit(&pemain1, &komputer), selesai(false),
       bolaBergerak(false), menaruhBola(false), posisiTaruhSah(true), sisaWaktu(0.0f),
-      sentuhanPertama(-1)
+      sentuhanPertama(-1), suara(0), jumlahPelanggaranP1(0), hitunganMasukSuara(0)
 {
     for (int i = 0; i < 16; i++)
     {
@@ -68,6 +70,8 @@ void Permainan::mulaiPertandingan()
     bolaBergerak = false;
     menaruhBola = false;
     posisiTaruhSah = true;
+    jumlahPelanggaranP1 = 0;
+    hitunganMasukSuara = 0;
     pemain1.batalkan();
     pemain2.batalkan();
     komputer.batalkan();
@@ -100,6 +104,21 @@ bool Permainan::apakahLawanKomputer() const
 void Permainan::aturTingkat(Tingkat t)
 {
     komputer.aturTingkat(t);
+}
+
+Tingkat Permainan::getTingkat() const
+{
+    return komputer.getTingkat();
+}
+
+void Permainan::aturPengelolaSuara(PengelolaSuara* s)
+{
+    suara = s;
+}
+
+int Permainan::getJumlahPelanggaranP1() const
+{
+    return jumlahPelanggaranP1;
 }
 
 void Permainan::aturNamaPemain1(const std::string& nama)
@@ -201,6 +220,15 @@ void Permainan::update(float dt)
             sisaWaktu = 0.0f;
             sentuhanPertama = -1;
             bolaMasuk.clear();
+            if (suara)
+            {
+                sf::Vector2f vPukul = bola[0]->getKecepatan();
+                float laju = std::sqrt(vPukul.x * vPukul.x + vPukul.y * vPukul.y);
+                float skala = laju / 1800.0f;
+                if (skala < 0.25f) skala = 0.25f;
+                if (skala > 1.0f) skala = 1.0f;
+                suara->putarEfek(SFX_PUKUL_STIK, skala);
+            }
         }
     }
 
@@ -232,19 +260,55 @@ void Permainan::langkahFisika(float h)
     {
         for (int j = i + 1; j < 16; j++)
         {
-            if (bola[i]->tumbuk(*bola[j]) && i == 0 && sentuhanPertama < 0)
+            sf::Vector2f vSebelum = bola[i]->getKecepatan();
+            if (bola[i]->tumbuk(*bola[j]))
             {
-                sentuhanPertama = bola[j]->getNomor();
+                if (i == 0 && sentuhanPertama < 0)
+                {
+                    sentuhanPertama = bola[j]->getNomor();
+                }
+                if (suara)
+                {
+                    sf::Vector2f dv = bola[i]->getKecepatan() - vSebelum;
+                    float impuls = std::sqrt(dv.x * dv.x + dv.y * dv.y);
+                    if (impuls > 25.0f)
+                    {
+                        float skala = impuls / 700.0f;
+                        if (skala < 0.18f) skala = 0.18f;
+                        if (skala > 1.0f) skala = 1.0f;
+                        suara->putarEfek(SFX_TABRAKAN_BOLA, skala);
+                    }
+                }
             }
         }
     }
 
     for (int i = 0; i < 16; i++)
     {
+        sf::Vector2f vSebelum = bola[i]->getKecepatan();
         meja.pantulkan(*bola[i]);
+        if (suara)
+        {
+            sf::Vector2f dv = bola[i]->getKecepatan() - vSebelum;
+            float impuls = std::sqrt(dv.x * dv.x + dv.y * dv.y);
+            if (impuls > 30.0f)
+            {
+                float skala = impuls / 800.0f;
+                if (skala < 0.20f) skala = 0.20f;
+                if (skala > 1.0f) skala = 1.0f;
+                suara->putarEfek(SFX_PANTUL_MEJA, skala);
+            }
+        }
         if (meja.cekLubang(*bola[i]))
         {
             bolaMasuk.push_back(bola[i]->getNomor());
+            if (suara)
+            {
+                JenisEfekSuara efek = (bola[i]->getNomor() == 8 || (hitunganMasukSuara % 2 == 1))
+                    ? SFX_MASUK_LUBANG_2 : SFX_MASUK_LUBANG;
+                hitunganMasukSuara++;
+                suara->putarEfek(efek, 1.0f);
+            }
         }
     }
 }
@@ -272,7 +336,23 @@ void Permainan::selesaiPukulan()
     }
     std::cout << std::endl;
 
+    const Pemain* penembak = wasit.getGiliran();
     wasit.periksaPukulan(sentuhanPertama, bolaMasuk, bola);
+    if (wasit.adaPelanggaran() && penembak == &pemain1)
+    {
+        jumlahPelanggaranP1++;
+    }
+    if (suara)
+    {
+        if (wasit.pemenang())
+        {
+            suara->putarEfek(wasit.pemenang()->apakahKomputer() ? SFX_PELANGGARAN : SFX_MENANG, 1.0f);
+        }
+        else if (wasit.adaPelanggaran())
+        {
+            suara->putarEfek(SFX_PELANGGARAN, 1.0f);
+        }
+    }
     if (!wasit.getKeterangan().empty())
     {
         std::cout << "  " << wasit.getKeterangan() << std::endl;

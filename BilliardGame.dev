@@ -11,7 +11,7 @@ ResourceIncludes=
 MakeIncludes=
 Compiler=
 CppCompiler=
-Linker=-lsfml-graphics -lsfml-window -lsfml-system_@@_
+Linker=-lsfml-audio -lsfml-graphics -lsfml-window -lsfml-system_@@_
 IsCpp=1
 Icon=
 ExeOutput=
@@ -25,7 +25,7 @@ UseCustomMakefile=0
 CustomMakefile=
 CommandLine=
 Folders=include,src
-UnitCount=28
+UnitCount=32
 IncludeVersionInfo=0
 SupportXPThemes=0
 CompilerSet=0
@@ -322,6 +322,46 @@ BuildCmd=
 
 [Unit28]
 FileName=src\PopupPemenang.cpp
+CompileCpp=1
+Folder=src
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit29]
+FileName=include\PengelolaSuara.h
+CompileCpp=1
+Folder=include
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit30]
+FileName=src\PengelolaSuara.cpp
+CompileCpp=1
+Folder=src
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit31]
+FileName=include\PapanSkor.h
+CompileCpp=1
+Folder=include
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit32]
+FileName=src\PapanSkor.cpp
 CompileCpp=1
 Folder=src
 Compile=1
